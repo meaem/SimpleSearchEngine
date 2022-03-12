@@ -19,23 +19,26 @@ fun printMenuAndGetUserChoice(): Int {
     return choice.toInt()
 }
 
-fun searchForQuery(lines: List<String>) {
+fun searchForQuery(lines: List<String>, index: Map<String, MutableList<Int>>) {
 //    println("\nEnter the number of search queries:")
 //    val numOfQueries = readln().toInt()
 //    println()
 //    for (i in 1..numOfQueries) {
     println("Enter data to search people:")
     val q = readln()
-    val result = lines.filter {
-//        it.split("\\b".toRegex()).map { it.lowercase() }.containsAll(q.lowercase().split("\\b".toRegex()))
-        it.lowercase().contains(q.lowercase())
-    }
 
-    if (result.isEmpty()) {
+    val result = index[q.lowercase()] //lines.filterIndexed { idx, s ->  index[q]!!.contains(idx) }
+
+    if (result.isNullOrEmpty()) {
         println("No matching people found.\n")
+
+
     } else {
-//        println("\nPeople found:")
-        result.forEach { println(it) }
+        if (result.size == 1)
+            println("${result.size} person found:")
+        else
+            println("${result.size} persons found:")
+        result.forEach { println(lines[it]) }
         println()
     }
 //    }
@@ -61,11 +64,12 @@ fun main(args: Array<String>) {
         return
     }
     val lines = file.readLines()
+    val index = buildIndex(lines)
 
     var choice = printMenuAndGetUserChoice()
     while (choice != 0) {
         when (choice) {
-            1 -> searchForQuery(lines)
+            1 -> searchForQuery(lines, index)
             2 -> printAll(lines)
         }
 
@@ -74,6 +78,17 @@ fun main(args: Array<String>) {
 
     println("Bye!")
 
+}
+
+fun buildIndex(lines: List<String>): Map<String, MutableList<Int>> {
+//    println(lines.joinToString ("\n"))
+    val index = mutableMapOf<String, MutableList<Int>>()
+    lines.forEachIndexed { idx, s ->
+        val tokens = s.lowercase().split("\\s+".toRegex())
+        tokens.forEach { t -> index.putIfAbsent(t, mutableListOf(idx))?.add(idx) }
+    }
+//    println(index)
+    return index
 }
 
 fun printAll(lines: List<String>) {
