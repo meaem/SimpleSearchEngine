@@ -19,17 +19,59 @@ fun printMenuAndGetUserChoice(): Int {
     return choice.toInt()
 }
 
-fun searchForQuery(lines: List<String>, index: Map<String, MutableList<Int>>) {
+fun searchForQuery(lines: List<String>, index: Map<String, MutableSet<Int>>) {
 //    println("\nEnter the number of search queries:")
 //    val numOfQueries = readln().toInt()
 //    println()
 //    for (i in 1..numOfQueries) {
+    var strategy = ""
+    while (strategy !in setOf("all", "any", "none")) {
+        println("Select a matching strategy: ALL, ANY, NONE\n")
+        strategy = readln().lowercase()
+    }
+
     println("Enter data to search people:")
-    val q = readln()
+    val q = readln().lowercase()
+    val q_tokens = q.split("\\s+".toRegex())
+    var result = setOf<Int>()
+    q_tokens.forEach {
+        if (strategy == "all") {
+            if (q_tokens.all { it in index.keys }) {
+                result = index.filter {
+                    it.key in q_tokens
+                }.map {
+                    it.value.toSet()
+                }.reduce { acc, set ->
+                    set.intersect(acc)
+                }
+            }
 
-    val result = index[q.lowercase()] //lines.filterIndexed { idx, s ->  index[q]!!.contains(idx) }
+        } else if (strategy == "any") {
+            if (q_tokens.any { it in index.keys }) {
+                result = index.filter {
+                    it.key in q_tokens
+                }.map {
+                    it.value.toSet()
+                }.reduce { acc, set ->
+                    set.union(acc)
+                }
+            }
+        } else { //NONE
+            if (q_tokens.any { it in index.keys }) {
+                result = index.filter {
+                    it.key in q_tokens
+                }.map {
+                    it.value.toSet()
+                }.reduce { acc, set ->
+                    set.union(acc)
+                }
+            }
+            result = (0..lines.lastIndex).toSet() - result
+        }
+    }
+//    result = index[q.lowercase()] //lines.filterIndexed { idx, s ->  index[q]!!.contains(idx) }
 
-    if (result.isNullOrEmpty()) {
+    if (result.isEmpty()) {
         println("No matching people found.\n")
 
 
@@ -66,6 +108,7 @@ fun main(args: Array<String>) {
     val lines = file.readLines()
     val index = buildIndex(lines)
 
+
     var choice = printMenuAndGetUserChoice()
     while (choice != 0) {
         when (choice) {
@@ -80,12 +123,12 @@ fun main(args: Array<String>) {
 
 }
 
-fun buildIndex(lines: List<String>): Map<String, MutableList<Int>> {
+fun buildIndex(lines: List<String>): Map<String, MutableSet<Int>> {
 //    println(lines.joinToString ("\n"))
-    val index = mutableMapOf<String, MutableList<Int>>()
+    val index = mutableMapOf<String, MutableSet<Int>>()
     lines.forEachIndexed { idx, s ->
         val tokens = s.lowercase().split("\\s+".toRegex())
-        tokens.forEach { t -> index.putIfAbsent(t, mutableListOf(idx))?.add(idx) }
+        tokens.forEach { t -> index.putIfAbsent(t, mutableSetOf(idx))?.add(idx) }
     }
 //    println(index)
     return index
